@@ -15,12 +15,28 @@ async function loadConfig() {
 }
 
 let authorDiv = document.getElementById("hero_div");
+
 function pageLoaded() {
     if (config && config.length > 0) {
         let author = config[0].AUTHOR;
         let githubLink = config[0].github_link;
         let authorId = config[0].ID;
-        authorDiv.innerHTML = `<p class="mb-2">
-            Created by <a href="${githubLink}" target="_blank">${author}</a> (ID: ${authorId})</p>`;
+        let projectName = config[0].PROJECT_NAME || 'Project';
+        let projectDesc = config[0].PROJECT_DESC || '';
+
+        authorDiv.innerHTML = `
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
+                <div class="flex-grow-1">
+                    <h2 class="mb-2">${projectName}</h2>
+                    ${projectDesc ? `<p class="lead mb-3">${projectDesc}</p>` : ''}
+                    <p class="mb-2">Created by <a href="${githubLink}" target="_blank">${author}</a></p>
+                    <p class="text-muted mb-3">ID: <code>${authorId}</code></p>
+                    <a href="${githubLink}" target="_blank" class="btn btn-outline-secondary btn-github me-2"><i class="bi bi-github"></i> View on GitHub</a>
+                </div>
+                <div class="mt-3 mt-md-0 text-center" style="min-width:120px;">
+                    <i class="bi bi-person-circle" style="font-size:64px;color:var(--primary-2)"></i>
+                </div>
+            </div>
+        `;
     }
 }

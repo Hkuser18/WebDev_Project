@@ -1,0 +1,162 @@
+:root {
+    --primary: #4f46e5;
+    /* indigo-600 */
+    --primary-2: #7c3aed;
+    /* indigo-500 */
+    --accent: #06b6d4;
+    /* cyan-500 */
+    --bg-top: #ffffff;
+    /* very light */
+    --bg-bottom: #ffffff;
+    /* soft blue */
+    --card-bg: rgba(231, 230, 230, 0.76);
+    --muted: #6b7280;
+}
+
+/* Page background */
+body {
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Soften edges and add lift to cards */
+.card {
+    border-radius: 1rem;
+    background: var(--card-bg);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+    border: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.card .card-body {
+    padding: 2rem 2.25rem;
+}
+
+/* Slightly larger, friendlier headings */
+.card-title {
+    color: #0f172a;
+}
+
+/* Buttons with subtle gradients */
+.btn-primary {
+    background: linear-gradient(90deg, var(--primary), var(--primary-2));
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 6px 18px rgba(126, 119, 255, 0.538);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(79, 70, 229, 0.16);
+}
+
+.btn-outline-secondary {
+    border-radius: 0.75rem;
+    transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.btn-outline-secondary:hover {
+    background-color: rgba(15, 23, 42, 0.04);
+    transform: translateY(-2px);
+}
+
+/* Tighter footer */
+footer {
+    background: #c4eeff;
+}
+
+/* Author card tweaks */
+#hero_div .text-center a {
+    color: var(--primary-2);
+}
+
+#hero_div code {
+    background: rgba(15, 23, 42, 0.04);
+    padding: 0.12rem 0.35rem;
+    border-radius: 0.25rem;
+}
+
+/* Make main content a bit more centered on wide screens */
+@media (min-width: 992px) {
+    .col-lg-8 {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* Fine tune spacing */
+.card-text {
+    color: var(--muted);
+}
+
+/* Top bar: clean white band with subtle bottom border */
+.navbar {
+    background: #c4eeff;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: none;
+}
+
+.navbar .nav-link {
+    color: #0f172a;
+}
+
+.navbar .navbar-brand span {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Simpler card appearance */
+.card {
+    border-radius: 0.5rem;
+    background: #ffffff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 6px 18px rgba(16, 24, 40, 0.04);
+    border: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+/* Layout: page uses column flex so footer sits at bottom when content is short */
+html,
+body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Ensure main content expands to push footer down when content is short */
+.main-content {
+    flex: 1 0 auto;
+    display: flex;
+    align-items: center;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+}
+
+/* Hero card: larger, more prominent */
+.hero-card {
+    padding: 2.5rem;
+    border-radius: 0.75rem;
+}
+
+.hero-card .lead {
+    color: var(--muted);
+}
+
+.hero-card .btn-github {
+    background: transparent;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+/* Slight spacing tweak for the author card so it sits between header and body */
+#hero_div {
+    margin-bottom: 1rem;
+}
