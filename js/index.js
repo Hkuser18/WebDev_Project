@@ -6,7 +6,11 @@ let config = [];
 
 async function loadConfig() {
     try {
-        const response = await fetch('../config.json');
+        // Use a timed fetch so config load won't hang
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch('../config.json', { signal: controller.signal });
+        clearTimeout(id);
         config = await response.json();
         pageLoaded();
     } catch (error) {
@@ -33,8 +37,8 @@ function pageLoaded() {
                     <p class="text-muted mb-3">ID: <code>${authorId}</code></p>
                     <a href="${githubLink}" target="_blank" class="btn btn-outline-secondary btn-github me-2"><i class="bi bi-github"></i> View on GitHub</a>
                 </div>
-                <div class="mt-3 mt-md-0 text-center" style="min-width:120px;">
-                    <i class="bi bi-person-circle" style="font-size:64px;color:var(--primary-2)"></i>
+                <div class="mt-3 mt-md-0 text-center hero-avatar">
+                    <i class="bi bi-person-circle hero-icon"></i>
                 </div>
             </div>
         `;

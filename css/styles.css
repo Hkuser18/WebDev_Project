@@ -1,9 +1,10 @@
 :root {
-    --primary: #4f46e5;
-    /* indigo-600 */
-    --primary-2: #7c3aed;
-    /* indigo-500 */
+    --primary: #2563eb;
+    /* blue-600 */
+    --primary-2: #4f46e5;
+    /* indigo-600 (accent) */
     --accent: #06b6d4;
+    /* cyan-500 */
     /* cyan-500 */
     --bg-top: #ffffff;
     /* very light */
@@ -43,25 +44,30 @@ body {
 .btn-primary {
     background: linear-gradient(90deg, var(--primary), var(--primary-2));
     border: none;
-    border-radius: 0.75rem;
-    box-shadow: 0 6px 18px rgba(126, 119, 255, 0.538);
-    transition: transform 120ms ease, box-shadow 120ms ease;
+    border-radius: 999px;
+    /* pill */
+    padding: 0.5rem 1rem;
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.12);
+    transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms;
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
     transform: translateY(-2px);
-    box-shadow: 0 12px 26px rgba(79, 70, 229, 0.16);
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.14);
+    opacity: 0.98;
 }
 
 .btn-outline-secondary {
-    border-radius: 0.75rem;
-    transition: background-color 120ms ease, transform 120ms ease;
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    transition: background-color 120ms ease, transform 120ms ease, opacity 120ms;
 }
 
 .btn-outline-secondary:hover {
     background-color: rgba(15, 23, 42, 0.04);
     transform: translateY(-2px);
+    opacity: 0.98;
 }
 
 /* Tighter footer */
@@ -96,7 +102,7 @@ footer {
 
 /* Top bar: clean white band with subtle bottom border */
 .navbar {
-    background: #c4eeff;
+    background: linear-gradient(90deg, #e6f0ff, #f3f8ff);
     border-bottom: 1px solid rgba(15, 23, 42, 0.06);
     box-shadow: none;
 }
@@ -147,6 +153,16 @@ body {
     border-radius: 0.75rem;
 }
 
+/* Small utility: rounded small buttons used in lists */
+.btn-sm.rounded-pill {
+    border-radius: 999px;
+}
+
+/* Make fav/add buttons slightly more rounded and consistent */
+.fav-btn {
+    border-radius: 999px;
+}
+
 .hero-card .lead {
     color: var(--muted);
 }
@@ -159,4 +175,145 @@ body {
 /* Slight spacing tweak for the author card so it sits between header and body */
 #hero_div {
     margin-bottom: 1rem;
+}
+
+/* ==========================================
+     Styles moved from inline <style> blocks
+     extracted from playlists.html and search.html
+     ========================================== */
+
+/* Playlists page */
+.playlist-sidebar {
+    min-height: 80vh;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.playlist-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.playlist-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.playlist-item.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.video-list-thumb {
+    width: 120px;
+    height: 68px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.star-rating i {
+    cursor: pointer;
+    color: #ffc107;
+}
+
+.star-rating i.empty {
+    color: #e4e5e9;
+}
+
+.playlist-header-left {
+    min-width: 260px;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.playlist-header-left h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.playlist-header-right {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+}
+
+.playlist-header-right .input-group {
+    max-width: 300px;
+}
+
+/* Wide container helper previously inline */
+.container-wide {
+    max-width: 1400px;
+}
+
+/* Search page video card helpers */
+.video-card-img-top {
+    height: 180px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.card-title-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 3rem;
+}
+
+.video-stats {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+/* Welcome avatar in search page */
+.welcome-avatar {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+/* Brand icon used across pages instead of inline styles */
+.brand-icon {
+    font-size: 1.4rem;
+    color: var(--primary-2);
+}
+
+/* Hero avatar container helper */
+.hero-avatar {
+    min-width: 120px;
+}
+
+/* Small icon sizing helper for hero */
+.hero-icon {
+    font-size: 64px;
+    color: var(--primary-2);
+}
+
+/* Header avatar used in nav */
+.hdr-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 8px;
+}
+
+/* Make any element clickable by showing pointer */
+.clickable {
+    cursor: pointer;
+}
+
+/* Large play icon centered on cards */
+.play-icon {
+    font-size: 3rem;
+}
+
+/* Toast host container to centralize z-index control */
+.toast-host {
+    z-index: 11;
 }

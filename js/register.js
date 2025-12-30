@@ -80,11 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         saveUser(user);
-        // Save current user in session so header shows immediately
-        const safeUser = { id: user.id, username: user.username, firstName: user.firstName, imageUrl: user.imageUrl };
-        sessionStorage.setItem('currentUser', JSON.stringify(safeUser));
 
-        // Redirect to login
+        // Redirect to login (do NOT auto-login after registration)
         window.location.href = 'login.html';
     });
 });
