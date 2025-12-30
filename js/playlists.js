@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let currentPlaylistId = null;
 let currentSort = 'date'; // 'date' | 'alpha' | 'rating'
+let serverPlaylists = [];
 
 function initPlaylistsPage() {
     // Ensure logged in
@@ -25,6 +26,45 @@ function initPlaylistsPage() {
 
     const filterInput = document.getElementById('filterInput');
     if (filterInput) filterInput.addEventListener('input', () => renderCurrentPlaylist());
+
+    // Upload button handler (upload MP3 and add to current playlist)
+    const uploadBtn = document.getElementById('playlistUploadBtn');
+    if (uploadBtn) uploadBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('playlistUploadInput');
+        if (!input || !input.files || input.files.length === 0) {
+            alert('Please choose an MP3 file to upload.');
+            return;
+        }
+        if (!currentPlaylistId) {
+            alert('Please select a playlist first.');
+            return;
+        }
+        const file = input.files[0];
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const prevId = currentPlaylistId;
+            const upRes = await fetch('/api/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
+            if (!upRes.ok) throw new Error('Upload failed');
+            const upData = await upRes.json();
+            const mp3Id = guid();
+            const videoPayload = { id: mp3Id, title: file.name, img: '', type: 'mp3', src: upData.url };
+            const addRes = await fetch(`/api/playlists/${encodeURIComponent(currentPlaylistId)}/add`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video: videoPayload }) });
+            if (!addRes.ok) throw new Error('Add failed');
+            // refresh playlists and UI
+            await loadAndRenderPlaylists();
+            // re-select the previous playlist (server may have reordered)
+            if (prevId) selectPlaylist(prevId, false);
+            renderCurrentPlaylist();
+            // reset input
+            input.value = '';
+            alert('MP3 uploaded and added to playlist.');
+        } catch (err) {
+            console.error(err);
+            alert('Upload failed. See console for details.');
+        }
+    });
 
     // Load playlists and render
     loadAndRenderPlaylists();
@@ -49,26 +89,29 @@ function guid() {
     });
 }
 
-function loadAndRenderPlaylists() {
-    const { allUsers, userRecord, userIndex } = getStorageUserRecord();
+async function loadAndRenderPlaylists() {
     const sidebar = document.getElementById('sidebarPlaylistList');
+    sidebar.innerHTML = '<div class="text-center text-muted small mt-2">Loading...</div>';
+    try {
+        const res = await fetch('/api/playlists', { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        serverPlaylists = data.playlists || [];
+    } catch (e) {
+        sidebar.innerHTML = '<div class="text-center text-danger small mt-2">Could not load playlists.</div>';
+        showEmptyState();
+        return;
+    }
 
-    if (!userRecord || !userRecord.playlists || userRecord.playlists.length === 0) {
+    if (!serverPlaylists || serverPlaylists.length === 0) {
         sidebar.innerHTML = '<div class="text-center text-muted small mt-2">No playlists yet.</div>';
         showEmptyState();
         return;
     }
 
-    // Ensure playlists have ids (migrate if needed)
-    let changed = false;
-    userRecord.playlists.forEach(pl => {
-        if (!pl.id) { pl.id = guid(); changed = true; }
-    });
-    if (changed) { allUsers[userIndex] = userRecord; saveAllUsers(allUsers); }
-
     // Build sidebar list
     sidebar.innerHTML = '';
-    userRecord.playlists.forEach(pl => {
+    serverPlaylists.forEach(pl => {
         const item = document.createElement('div');
         item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center playlist-item';
         item.dataset.playlistId = pl.id;
@@ -98,14 +141,12 @@ function loadAndRenderPlaylists() {
     // Select playlist based on querystring or default to first
     const params = new URLSearchParams(window.location.search);
     const requestedId = params.get('playlist');
-    const findId = requestedId ? requestedId : userRecord.playlists[0].id;
+    const findId = requestedId ? requestedId : serverPlaylists[0].id;
     selectPlaylist(findId, false);
 }
 
 function selectPlaylist(id, pushState = true) {
-    const { allUsers, userRecord } = getStorageUserRecord();
-    if (!userRecord || !userRecord.playlists) return;
-    const pl = userRecord.playlists.find(p => p.id === id);
+    const pl = serverPlaylists.find(p => p.id === id);
     if (!pl) return;
 
     currentPlaylistId = id;
@@ -129,13 +170,12 @@ function renderCurrentPlaylist() {
     const songsContainer = document.getElementById('songsContainer');
     const filterVal = (document.getElementById('filterInput')?.value || '').toLowerCase();
 
-    const { allUsers, userRecord } = getStorageUserRecord();
-    if (!userRecord || !userRecord.playlists || !currentPlaylistId) {
+    if (!serverPlaylists || !currentPlaylistId) {
         showEmptyState();
         return;
     }
 
-    const pl = userRecord.playlists.find(p => p.id === currentPlaylistId);
+    const pl = serverPlaylists.find(p => p.id === currentPlaylistId);
     if (!pl) { showEmptyState(); return; }
 
     header.classList.remove('d-none');
@@ -233,30 +273,23 @@ function createNewPlaylist() {
     const nameInput = document.getElementById('newPlaylistNameInput');
     const name = (nameInput?.value || '').trim();
     if (!name) { alert('Please enter a playlist name.'); return; }
-
-    const { allUsers, userRecord, userIndex } = getStorageUserRecord();
-    if (!userRecord) return;
-
-    if (!userRecord.playlists) userRecord.playlists = [];
-    const newPl = { id: guid(), name: name, videos: [] };
-    userRecord.playlists.push(newPl);
-    allUsers[userIndex] = userRecord;
-    saveAllUsers(allUsers);
-
-    // Close modal
-    const modalEl = document.getElementById('createPlaylistModal');
-    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-    modal.hide();
-    document.getElementById('createPlaylistForm').reset();
-
-    loadAndRenderPlaylists();
-    // Select new
-    selectPlaylist(newPl.id, true);
+    // Call server to create
+    fetch('/api/playlists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+        .then(async (res) => {
+            if (!res.ok) throw new Error('Failed');
+            const data = await res.json();
+            // Close modal
+            const modalEl = document.getElementById('createPlaylistModal');
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.hide();
+            document.getElementById('createPlaylistForm').reset();
+            await loadAndRenderPlaylists();
+            selectPlaylist(data.playlist.id, true);
+        }).catch(e => alert('Could not create playlist'));
 }
 
 function playPlaylist(id) {
-    const { userRecord } = getStorageUserRecord();
-    const pl = userRecord.playlists.find(p => p.id === id);
+    const pl = serverPlaylists.find(p => p.id === id);
     if (!pl || !pl.videos || pl.videos.length === 0) {
         alert('Playlist is empty.');
         return;
@@ -266,33 +299,32 @@ function playPlaylist(id) {
 
 function deleteSongFromPlaylist(playlistId, videoId) {
     if (!confirm('Remove this song from the playlist?')) return;
-    const { allUsers, userRecord, userIndex } = getStorageUserRecord();
-    const pl = userRecord.playlists.find(p => p.id === playlistId);
-    if (!pl) return;
-    pl.videos = pl.videos.filter(v => v.id !== videoId);
-    allUsers[userIndex] = userRecord; saveAllUsers(allUsers);
-    renderCurrentPlaylist();
-    loadAndRenderPlaylists();
+    fetch(`/api/playlists/${encodeURIComponent(playlistId)}/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoId }) })
+        .then(async (res) => {
+            if (!res.ok) throw new Error('Failed');
+            await loadAndRenderPlaylists();
+            if (currentPlaylistId === playlistId) renderCurrentPlaylist();
+        }).catch(e => alert('Could not remove song'));
 }
 
 function confirmDeletePlaylist() {
     if (!currentPlaylistId) return;
     if (!confirm('Delete this playlist and all its songs?')) return;
-    const { allUsers, userRecord, userIndex } = getStorageUserRecord();
-    userRecord.playlists = userRecord.playlists.filter(p => p.id !== currentPlaylistId);
-    allUsers[userIndex] = userRecord; saveAllUsers(allUsers);
-    currentPlaylistId = null;
-    loadAndRenderPlaylists();
+    fetch(`/api/playlists/${encodeURIComponent(currentPlaylistId)}/delete`, { method: 'POST' })
+        .then(async (res) => {
+            if (!res.ok) throw new Error('Failed');
+            currentPlaylistId = null;
+            await loadAndRenderPlaylists();
+        }).catch(e => alert('Could not delete playlist'));
 }
 
 function rateSong(playlistId, videoId, rating) {
-    const { allUsers, userRecord, userIndex } = getStorageUserRecord();
-    const pl = userRecord.playlists.find(p => p.id === playlistId);
+    // Local UI change; persistence of ratings is not implemented server-side yet
+    const pl = serverPlaylists.find(p => p.id === playlistId);
     if (!pl) return;
     const v = pl.videos.find(x => x.id === videoId);
     if (!v) return;
     v.rating = rating;
-    allUsers[userIndex] = userRecord; saveAllUsers(allUsers);
     renderCurrentPlaylist();
 }
 
@@ -306,6 +338,24 @@ function openVideoPlayer(videoId) {
     const modalEl = document.getElementById('videoModal');
     const iframe = document.getElementById('videoPlayerFrame');
     const modal = new bootstrap.Modal(modalEl);
+
+    // try to find a video object in serverPlaylists
+    let found = null;
+    for (const pl of serverPlaylists) {
+        const v = (pl.videos || []).find(x => x.id === videoId);
+        if (v) { found = v; break; }
+    }
+
+    if (found && found.type === 'mp3' && found.src) {
+        // show audio player inside modal body
+        const modalBody = modalEl.querySelector('.modal-body');
+        modalBody.innerHTML = `<div class="p-3"><audio controls autoplay style="width:100%"><source src="${found.src}" /></audio><div class="mt-2"><strong>${escapeHtml(found.title || 'Audio')}</strong></div></div>`;
+        modal.show();
+        modalEl.addEventListener('hidden.bs.modal', () => { modalBody.innerHTML = ''; });
+        return;
+    }
+
+    // default: treat as YouTube video id
     iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     modal.show();
     modalEl.addEventListener('hidden.bs.modal', () => { iframe.src = ''; });

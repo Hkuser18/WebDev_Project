@@ -1,0 +1,32 @@
+[
+  {
+    "id": "f1848e1b-a3a4-437c-a2b8-47c81b9f9bbd",
+    "username": "cooluser",
+    "firstName": "coolio",
+    "imageUrl": "https://cdn.pixabay.com/photo/2021/01/02/13/33/human-5881575_1280.jpg",
+    "passwordHash": "$2b$10$KCJsKBmiDSWWJat5QS2qxOtCByRu26NG7RoDFfKdnwr9ZIUq/1M6i",
+    "playlists": [
+      {
+        "id": "23ca56fe-8c38-4dd7-ae5e-a508032c7685",
+        "name": "playlist",
+        "videos": [
+          {
+            "id": "h0ffIJ7ZO4U",
+            "title": "Dire Straits - Sultans Of Swing (Official Music Video)",
+            "img": "https://i.ytimg.com/vi/h0ffIJ7ZO4U/mqdefault.jpg",
+            "type": "youtube",
+            "dateAdded": "2025-12-30T15:26:37.640Z"
+          },
+          {
+            "id": "3b6e7957-8ed2-459b-bec3-3440d550a6e8",
+            "title": "Dire Straits - Brothers In Arms.mp3",
+            "img": "",
+            "type": "mp3",
+            "src": "/server/uploads/7706bc6fe2de211cb10bc06155160c0a",
+            "dateAdded": "2025-12-30T15:32:23.317Z"
+          }
+        ]
+      }
+    ]
+  }
+]

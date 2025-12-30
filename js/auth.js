@@ -34,8 +34,15 @@ function renderUserInHeader() {
     if (avatarEl) loadImageWithTimeout(avatarEl, avatarSrc, 3000, 'defAvatar.png');
 
     const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) logoutBtn.addEventListener('click', () => {
+    if (logoutBtn) logoutBtn.addEventListener('click', async () => {
+        try {
+            await fetch('/api/logout', { method: 'POST' });
+        } catch (e) {
+            // ignore
+        }
         sessionStorage.removeItem('currentUser');
+        // show signed-out header
+        renderUserInHeader();
         window.location.href = 'index.html';
     });
     // Hide left-side nav "Login/Register" when signed-in
@@ -92,10 +99,27 @@ function escapeHtml(text) {
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
-// Ensure header renders whether the script is loaded before or after DOMContentLoaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderUserInHeader);
-} else {
-    // DOM already ready
+// Initialize header by querying server for current session user (keeps client/sessionStorage in sync)
+async function initAuthHeader() {
+    try {
+        const res = await fetch('/api/current', { credentials: 'same-origin' });
+        if (res.ok) {
+            const d = await res.json().catch(() => ({}));
+            if (d && d.user) {
+                sessionStorage.setItem('currentUser', JSON.stringify(d.user));
+            } else {
+                // ensure no stale client-side value
+                sessionStorage.removeItem('currentUser');
+            }
+        }
+    } catch (e) {
+        // ignore network errors, keep client state as-is
+    }
     renderUserInHeader();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAuthHeader);
+} else {
+    initAuthHeader();
 }

@@ -70,18 +70,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Create user object
-        const user = {
-            id: guid(),
-            username: username,
-            firstName: firstName,
-            imageUrl: imageUrl,
-            password: password
-        };
-
-        saveUser(user);
-
-        // Redirect to login (do NOT auto-login after registration)
-        window.location.href = 'login.html';
+        // Call server API to register
+        fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, firstName, imageUrl, password })
+        }).then(async (res) => {
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                errorsDiv.innerHTML = `<div class="text-danger">${err.error || 'Registration failed'}</div>`;
+                return;
+            }
+            // success -> redirect to login
+            window.location.href = 'login.html';
+        }).catch(e => {
+            errorsDiv.innerHTML = `<div class="text-danger">Network error</div>`;
+        });
     });
 });

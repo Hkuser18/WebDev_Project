@@ -81,13 +81,28 @@ function loadImageWithTimeout(imgEl, src, timeoutMs = 3000, fallback = 'defAvata
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadApiKey();
-    checkLoginAndSetup();
+    await checkLoginAndSetup();
     initSearchPage();
 });
 
 // 1. Auth & UI Setup
-function checkLoginAndSetup() {
-    const userJson = sessionStorage.getItem("currentUser");
+async function checkLoginAndSetup() {
+    let userJson = sessionStorage.getItem("currentUser");
+    if (!userJson) {
+        try {
+            const res = await fetch('/api/current', { credentials: 'same-origin' });
+            if (res.ok) {
+                const d = await res.json().catch(() => ({}));
+                if (d && d.user) {
+                    sessionStorage.setItem('currentUser', JSON.stringify(d.user));
+                    userJson = sessionStorage.getItem('currentUser');
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
     // Redirect if not logged in
     if (!userJson) {
         window.location.href = "login.html";
@@ -100,7 +115,6 @@ function checkLoginAndSetup() {
     const welcomeSection = document.getElementById("welcomeSection");
     const welcomeUsername = document.getElementById("welcomeUsername");
     const userAvatar = document.getElementById("userAvatar");
-    const navActions = document.getElementById("navActions");
 
     if (welcomeSection) {
         welcomeSection.classList.remove("d-none");
@@ -299,23 +313,19 @@ function refreshVideoCard(videoId) {
         if (!col) return;
         const btn = col.querySelector('.fav-btn');
         if (!btn) return;
-
-        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        const allUsers = JSON.parse(localStorage.getItem('users')) || [];
-        const userRecord = allUsers.find(u => u.username === currentUser.username);
-        const userPlaylists = userRecord ? (userRecord.playlists || []) : [];
-
-        let isFavorite = false;
-        userPlaylists.forEach(pl => {
-            if (pl.videos && pl.videos.some(v => v.id === videoId)) isFavorite = true;
-        });
-
-        const favIcon = isFavorite ? 'bi-check-lg' : 'bi-heart';
-        const favBtnColor = isFavorite ? 'btn-secondary' : 'btn-outline-danger';
-        const favText = isFavorite ? 'Added' : 'Add';
-
-        btn.className = `btn btn-sm ${favBtnColor} fav-btn`;
-        btn.innerHTML = `<i class="bi ${favIcon}"></i> ${favText}`;
+        // Ask server whether video is present in any playlist
+        fetch('/api/playlists', { credentials: 'same-origin' }).then(async (res) => {
+            if (!res.ok) return;
+            const data = await res.json().catch(() => ({}));
+            const pls = data.playlists || [];
+            let isFavorite = false;
+            pls.forEach(pl => { if (pl.videos && pl.videos.some(v => v.id === videoId)) isFavorite = true; });
+            const favIcon = isFavorite ? 'bi-check-lg' : 'bi-heart';
+            const favBtnColor = isFavorite ? 'btn-secondary' : 'btn-outline-danger';
+            const favText = isFavorite ? 'Added' : 'Add';
+            btn.className = `btn btn-sm ${favBtnColor} fav-btn`;
+            btn.innerHTML = `<i class="bi ${favIcon}"></i> ${favText}`;
+        }).catch(() => { });
     } catch (e) {
         console.warn('refreshVideoCard error', e);
     }
@@ -349,20 +359,18 @@ window.openAddModal = function (id, title, img) {
     // Populate "Existing Playlists" dropdown
     const select = document.getElementById('existingPlaylistSelect');
     select.innerHTML = '<option value="" selected disabled>Choose...</option>';
-
-    const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
-    const allUsers = JSON.parse(localStorage.getItem("users")) || [];
-    const userRecord = allUsers.find(u => u.username === currentUser.username);
-
-    if (userRecord && userRecord.playlists) {
-        userRecord.playlists.forEach(pl => {
-            const opt = document.createElement("option");
-            // Use playlist id as the value for consistent ID-based operations
-            opt.value = pl.id || pl.name;
+    // Load playlists from server to populate dropdown
+    fetch('/api/playlists', { credentials: 'same-origin' }).then(async (res) => {
+        if (!res.ok) return;
+        const data = await res.json();
+        const pls = data.playlists || [];
+        pls.forEach(pl => {
+            const opt = document.createElement('option');
+            opt.value = pl.id;
             opt.textContent = pl.name;
             select.appendChild(opt);
         });
-    }
+    }).catch(() => { /* ignore */ });
 
     modal.show();
 };
@@ -380,39 +388,39 @@ function handleSaveToPlaylist() {
         alert("Please select or create a playlist.");
         return;
     }
+    // If new playlist name provided, create playlist first
+    (async () => {
+        try {
+            let targetId = existingValue;
+            if (!targetId && newName) {
+                const res = await fetch('/api/playlists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName }) });
+                if (!res.ok) throw new Error('Could not create playlist');
+                const data = await res.json();
+                targetId = data.playlist.id;
+            }
+            // Check for MP3 upload
+            const uploadInput = document.getElementById('uploadMp3File');
+            let videoPayload = { id: videoId, title: title, img: img, type: 'youtube' };
+            if (uploadInput && uploadInput.files && uploadInput.files.length > 0) {
+                // upload file first
+                const file = uploadInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+                const upRes = await fetch('/api/upload', { method: 'POST', body: formData, credentials: 'same-origin' });
+                if (!upRes.ok) throw new Error('Upload failed');
+                const upData = await upRes.json();
+                // create a new video-like entry representing the mp3
+                const mp3Id = guid();
+                videoPayload = { id: mp3Id, title: file.name, img: '', type: 'mp3', src: upData.url };
+            }
 
-    // Save to LocalStorage
-    const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
-    const allUsers = JSON.parse(localStorage.getItem("users")) || [];
-    const userIndex = allUsers.findIndex(u => u.username === currentUser.username);
-
-    if (userIndex !== -1) {
-        if (!allUsers[userIndex].playlists) allUsers[userIndex].playlists = [];
-
-        let playlists = allUsers[userIndex].playlists;
-        // Determine target playlist by id (existingValue) or by new name
-        let targetPlaylist = null;
-        if (existingValue) {
-            // existingValue may be an id (preferred) or a name (fallback)
-            targetPlaylist = playlists.find(p => p.id === existingValue) || playlists.find(p => p.name === existingValue);
-        }
-        if (!targetPlaylist && newName) {
-            // Create new playlist with id
-            targetPlaylist = { id: guid(), name: newName, videos: [] };
-            playlists.push(targetPlaylist);
-        }
-
-        // Add video if not duplicate
-        if (!targetPlaylist.videos.some(v => v.id === videoId)) {
-            targetPlaylist.videos.push({
-                id: videoId,
-                title: title,
-                img: img,
-                dateAdded: new Date().toISOString()
-            });
-
-            // Commit save
-            localStorage.setItem("users", JSON.stringify(allUsers));
+            // Now add to playlist
+            const addRes = await fetch(`/api/playlists/${encodeURIComponent(targetId)}/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video: videoPayload }) });
+            if (!addRes.ok) {
+                const e = await addRes.json().catch(() => ({}));
+                alert(e.error || 'Could not add to playlist');
+                return;
+            }
 
             // Close Modal & Reset Form
             bootstrap.Modal.getInstance(document.getElementById('addToPlaylistModal')).hide();
@@ -423,10 +431,10 @@ function handleSaveToPlaylist() {
 
             // Refresh only the card for this video so results are not duplicated
             refreshVideoCard(videoId);
-        } else {
-            alert("Video already in this playlist!");
+        } catch (e) {
+            alert('Could not save to playlist');
         }
-    }
+    })();
 }
 
 // 6. Helpers

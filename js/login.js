@@ -17,21 +17,26 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        let users = [];
-        try { users = JSON.parse(localStorage.getItem('users')) || []; } catch (e) { users = []; }
-
-        const matched = users.find(u => u.username && u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-
-        if (!matched) {
-            errorDiv.textContent = 'Invalid username or password.';
-            return;
-        }
-
-        // set currentUser in sessionStorage (without password)
-        const safeUser = { id: matched.id, username: matched.username, firstName: matched.firstName, imageUrl: matched.imageUrl };
-        sessionStorage.setItem('currentUser', JSON.stringify(safeUser));
-
-        // redirect to search page
-        window.location.href = 'search.html';
+        // Call server to authenticate
+        fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        }).then(async (res) => {
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                errorDiv.textContent = err.error || 'Invalid username or password.';
+                return;
+            }
+            const data = await res.json();
+            if (data && data.user) {
+                sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                window.location.href = 'search.html';
+            } else {
+                errorDiv.textContent = 'Login failed.';
+            }
+        }).catch(e => {
+            errorDiv.textContent = 'Network error.';
+        });
     });
 });
