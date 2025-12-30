@@ -14,6 +14,9 @@ function initPlaylistsPage() {
         return;
     }
 
+    // Render header actions if available
+    if (typeof renderUserInHeader === 'function') renderUserInHeader();
+
     // Wire up UI
     document.getElementById('createPlaylistForm')?.addEventListener('submit', (e) => {
         e.preventDefault();

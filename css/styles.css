@@ -1,9 +1,10 @@
 :root {
-    --primary: #4f46e5;
-    /* indigo-600 */
-    --primary-2: #7c3aed;
-    /* indigo-500 */
+    --primary: #2563eb;
+    /* blue-600 */
+    --primary-2: #4f46e5;
+    /* indigo-600 (accent) */
     --accent: #06b6d4;
+    /* cyan-500 */
     /* cyan-500 */
     --bg-top: #ffffff;
     /* very light */
@@ -43,25 +44,30 @@ body {
 .btn-primary {
     background: linear-gradient(90deg, var(--primary), var(--primary-2));
     border: none;
-    border-radius: 0.75rem;
-    box-shadow: 0 6px 18px rgba(126, 119, 255, 0.538);
-    transition: transform 120ms ease, box-shadow 120ms ease;
+    border-radius: 999px;
+    /* pill */
+    padding: 0.5rem 1rem;
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.12);
+    transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms;
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
     transform: translateY(-2px);
-    box-shadow: 0 12px 26px rgba(79, 70, 229, 0.16);
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.14);
+    opacity: 0.98;
 }
 
 .btn-outline-secondary {
-    border-radius: 0.75rem;
-    transition: background-color 120ms ease, transform 120ms ease;
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    transition: background-color 120ms ease, transform 120ms ease, opacity 120ms;
 }
 
 .btn-outline-secondary:hover {
     background-color: rgba(15, 23, 42, 0.04);
     transform: translateY(-2px);
+    opacity: 0.98;
 }
 
 /* Tighter footer */
@@ -96,7 +102,7 @@ footer {
 
 /* Top bar: clean white band with subtle bottom border */
 .navbar {
-    background: #c4eeff;
+    background: linear-gradient(90deg, #e6f0ff, #f3f8ff);
     border-bottom: 1px solid rgba(15, 23, 42, 0.06);
     box-shadow: none;
 }
@@ -145,6 +151,16 @@ body {
 .hero-card {
     padding: 2.5rem;
     border-radius: 0.75rem;
+}
+
+/* Small utility: rounded small buttons used in lists */
+.btn-sm.rounded-pill {
+    border-radius: 999px;
+}
+
+/* Make fav/add buttons slightly more rounded and consistent */
+.fav-btn {
+    border-radius: 999px;
 }
 
 .hero-card .lead {

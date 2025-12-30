@@ -6,7 +6,11 @@ let config = [];
 
 async function loadConfig() {
     try {
-        const response = await fetch('../config.json');
+        // Use a timed fetch so config load won't hang
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch('../config.json', { signal: controller.signal });
+        clearTimeout(id);
         config = await response.json();
         pageLoaded();
     } catch (error) {

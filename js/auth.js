@@ -1,27 +1,72 @@
 // auth.js — manage header user display and logout
+// Render the header actions depending on session state
 function renderUserInHeader() {
     const navActions = document.getElementById('navActions');
     if (!navActions) return;
+
     const raw = sessionStorage.getItem('currentUser');
-    if (!raw) return;
+    if (!raw) {
+        // Signed-out state: show Sign in / Register buttons
+        navActions.innerHTML = `
+            <a href="login.html" class="btn btn-outline-secondary me-2 rounded-pill">Sign in</a>
+            <a href="register.html" class="btn btn-primary rounded-pill">Register</a>
+        `;
+        return;
+    }
+
     let user;
     try { user = JSON.parse(raw); } catch (e) { return; }
 
-    // Build user display
+    // Signed-in state: show avatar, username and logout
+    const avatarSrc = user.imageUrl || 'defAvatar.png';
     navActions.innerHTML = `
         <div class="d-flex align-items-center">
-            <img src="${user.imageUrl}" alt="avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:8px;" onerror="this.src='https://via.placeholder.com/36'" />
-            <span class="me-3">${user.username}</span>
-            <button id="logoutBtn" class="btn btn-outline-secondary btn-sm">Logout</button>
+            <img id="hdrAvatar" src="${avatarSrc}" alt="avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:8px;" />
+            <span class="me-3">${escapeHtml(user.username)}</span>
+            <button id="logoutBtn" class="btn btn-outline-secondary btn-sm rounded-pill">Logout</button>
         </div>
     `;
+
+    // Load avatar with timeout and fallback
+    const avatarEl = document.getElementById('hdrAvatar');
+    if (avatarEl) loadImageWithTimeout(avatarEl, avatarSrc, 3000, 'defAvatar.png');
 
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) logoutBtn.addEventListener('click', () => {
         sessionStorage.removeItem('currentUser');
-        // reload to update header
         window.location.href = 'index.html';
     });
+}
+
+// Image loader with timeout and fallback
+function loadImageWithTimeout(imgEl, src, timeoutMs = 3000, fallback = 'defAvatar.png') {
+    if (!imgEl) return;
+    let settled = false;
+    const img = new Image();
+    const t = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        imgEl.src = fallback;
+    }, timeoutMs);
+
+    img.onload = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(t);
+        imgEl.src = src;
+    };
+    img.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(t);
+        imgEl.src = fallback;
+    };
+    img.src = src;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
 document.addEventListener('DOMContentLoaded', () => renderUserInHeader());

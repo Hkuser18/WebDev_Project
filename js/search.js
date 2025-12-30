@@ -8,19 +8,69 @@ let API_KEY = "";
 
 async function loadApiKey() {
     try {
-        const res = await fetch('../key.txt');
-        if (!res.ok) {
-            // Try root relative path as a fallback
-            const res2 = await fetch('key.txt');
-            if (!res2.ok) return;
-            API_KEY = (await res2.text()).trim();
-            return;
+        let res = null;
+        try {
+            res = await fetchWithTimeout('../key.txt', { timeout: 3000 });
+        } catch (e) {
+            // fallback to root
+            res = await fetchWithTimeout('key.txt', { timeout: 3000 }).catch(() => null);
         }
-        API_KEY = (await res.text()).trim();
+        if (res && res.ok) {
+            API_KEY = (await res.text()).trim();
+        }
     } catch (e) {
         // network or file not found; leave API_KEY empty
         console.warn('Could not load API key from key.txt', e);
     }
+}
+
+// Helper: fetch with timeout
+async function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 8000 } = options;
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const res = await fetch(resource, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return res;
+    } catch (e) {
+        clearTimeout(id);
+        throw e;
+    }
+}
+
+// Small GUID generator for playlist IDs
+function guid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+// Image loader with timeout and fallback (for avatars)
+function loadImageWithTimeout(imgEl, src, timeoutMs = 3000, fallback = 'defAvatar.png') {
+    if (!imgEl) return;
+    let settled = false;
+    const img = new Image();
+    const t = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        imgEl.src = fallback;
+    }, timeoutMs);
+
+    img.onload = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(t);
+        imgEl.src = src;
+    };
+    img.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(t);
+        imgEl.src = fallback;
+    };
+    img.src = src;
 }
 
 
@@ -55,18 +105,13 @@ function checkLoginAndSetup() {
     if (welcomeSection) {
         welcomeSection.classList.remove("d-none");
         welcomeUsername.textContent = user.username;
-        // Use user image or a default placeholder
-        userAvatar.src = user.image || "https://via.placeholder.com/64";
+        // Use user image or default file with timeout fallback
+        const avatarSrc = user.image || 'defAvatar.png';
+        loadImageWithTimeout(userAvatar, avatarSrc, 3000, 'defAvatar.png');
     }
 
-    // Update Nav Button to Logout
-    if (navActions) {
-        navActions.innerHTML = `<button id="logoutBtn" class="btn btn-outline-danger">Logout</button>`;
-        document.getElementById("logoutBtn").addEventListener("click", () => {
-            sessionStorage.removeItem("currentUser");
-            window.location.href = "login.html";
-        });
-    }
+    // Let auth.js render the header actions (signed-in/out) consistently
+    if (typeof renderUserInHeader === 'function') renderUserInHeader();
 }
 
 // 2. Search Initialization
@@ -133,14 +178,14 @@ async function executeSearch(query) {
     try {
         let items = [];
 
-        // Step 1: Search Endpoint
-        const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=9&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}`);
+        // Step 1: Search Endpoint (use fetchWithTimeout)
+        const searchRes = await fetchWithTimeout(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=9&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}`, { timeout: 8000 });
         const searchData = await searchRes.json();
 
         if (searchData.items && searchData.items.length > 0) {
             // Step 2: Videos Endpoint (to get Duration and Views)
             const videoIds = searchData.items.map(item => item.id.videoId).join(",");
-            const detailsRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoIds}&key=${API_KEY}`);
+            const detailsRes = await fetchWithTimeout(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoIds}&key=${API_KEY}`, { timeout: 8000 });
             const detailsData = await detailsRes.json();
             items = detailsData.items;
         }
@@ -161,6 +206,9 @@ async function executeSearch(query) {
 // 4. Render Results
 function renderResults(videos) {
     const container = document.getElementById("resultsContainer");
+
+    // Always clear existing results to avoid duplicates when re-rendering
+    container.innerHTML = "";
 
     // Get current user playlists to check favorites status
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
@@ -196,6 +244,8 @@ function renderResults(videos) {
         // Create Card HTML
         const col = document.createElement("div");
         col.className = "col";
+        // tag the column so we can refresh only this card after adding to playlist
+        col.dataset.videoId = videoId;
         col.innerHTML = `
         <div class="card h-100 shadow-sm video-card">
             <div class="position-relative" style="cursor:pointer" onclick="openVideoPlayer('${videoId}')">
@@ -216,7 +266,7 @@ function renderResults(videos) {
                     <button class="btn btn-sm btn-primary" onclick="openVideoPlayer('${videoId}')">
                         <i class="bi bi-play-fill"></i> Play
                     </button>
-                    <button class="btn btn-sm ${favBtnColor}" onclick="openAddModal('${videoId}', '${title}', '${thumb}')">
+                    <button class="btn btn-sm ${favBtnColor} fav-btn" data-video-id="${videoId}" onclick="openAddModal('${videoId}', '${title}', '${thumb}')">
                         <i class="bi ${favIcon}"></i> ${favText}
                     </button>
                 </div>
@@ -225,6 +275,36 @@ function renderResults(videos) {
     `;
         container.appendChild(col);
     });
+}
+
+// Refresh a single video's favorite/add button after playlist changes
+function refreshVideoCard(videoId) {
+    try {
+        const container = document.getElementById('resultsContainer');
+        const col = container.querySelector(`[data-video-id="${videoId}"]`);
+        if (!col) return;
+        const btn = col.querySelector('.fav-btn');
+        if (!btn) return;
+
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        const allUsers = JSON.parse(localStorage.getItem('users')) || [];
+        const userRecord = allUsers.find(u => u.username === currentUser.username);
+        const userPlaylists = userRecord ? (userRecord.playlists || []) : [];
+
+        let isFavorite = false;
+        userPlaylists.forEach(pl => {
+            if (pl.videos && pl.videos.some(v => v.id === videoId)) isFavorite = true;
+        });
+
+        const favIcon = isFavorite ? 'bi-check-lg' : 'bi-heart';
+        const favBtnColor = isFavorite ? 'btn-secondary' : 'btn-outline-danger';
+        const favText = isFavorite ? 'Added' : 'Add';
+
+        btn.className = `btn btn-sm ${favBtnColor} fav-btn`;
+        btn.innerHTML = `<i class="bi ${favIcon}"></i> ${favText}`;
+    } catch (e) {
+        console.warn('refreshVideoCard error', e);
+    }
 }
 
 // 5. Modal Logic
@@ -263,7 +343,8 @@ window.openAddModal = function (id, title, img) {
     if (userRecord && userRecord.playlists) {
         userRecord.playlists.forEach(pl => {
             const opt = document.createElement("option");
-            opt.value = pl.name;
+            // Use playlist id as the value for consistent ID-based operations
+            opt.value = pl.id || pl.name;
             opt.textContent = pl.name;
             select.appendChild(opt);
         });
@@ -278,13 +359,10 @@ function handleSaveToPlaylist() {
     const title = document.getElementById('modalVideoTitle').value;
     const img = document.getElementById('modalVideoImg').value;
 
-    const existingName = document.getElementById('existingPlaylistSelect').value;
+    const existingValue = document.getElementById('existingPlaylistSelect').value;
     const newName = document.getElementById('newPlaylistName').value.trim();
 
-    // Determine target playlist name
-    let targetName = newName ? newName : existingName;
-
-    if (!targetName) {
+    if (!existingValue && !newName) {
         alert("Please select or create a playlist.");
         return;
     }
@@ -298,11 +376,15 @@ function handleSaveToPlaylist() {
         if (!allUsers[userIndex].playlists) allUsers[userIndex].playlists = [];
 
         let playlists = allUsers[userIndex].playlists;
-        let targetPlaylist = playlists.find(p => p.name === targetName);
-
-        // Create if doesn't exist
-        if (!targetPlaylist) {
-            targetPlaylist = { name: targetName, videos: [] };
+        // Determine target playlist by id (existingValue) or by new name
+        let targetPlaylist = null;
+        if (existingValue) {
+            // existingValue may be an id (preferred) or a name (fallback)
+            targetPlaylist = playlists.find(p => p.id === existingValue) || playlists.find(p => p.name === existingValue);
+        }
+        if (!targetPlaylist && newName) {
+            // Create new playlist with id
+            targetPlaylist = { id: guid(), name: newName, videos: [] };
             playlists.push(targetPlaylist);
         }
 
@@ -325,9 +407,8 @@ function handleSaveToPlaylist() {
             // Show Success Toast
             new bootstrap.Toast(document.getElementById('playlistToast')).show();
 
-            // Refresh Grid (to update the "Add" button to "Added")
-            const savedState = JSON.parse(sessionStorage.getItem("lastSearchState"));
-            if (savedState) renderResults(savedState.results);
+            // Refresh only the card for this video so results are not duplicated
+            refreshVideoCard(videoId);
         } else {
             alert("Video already in this playlist!");
         }
