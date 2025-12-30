@@ -196,7 +196,7 @@ function renderCurrentPlaylist() {
 
         // Delete button
         const delBtn = document.createElement('button');
-        delBtn.className = 'btn btn-sm btn-outline-danger';
+        delBtn.className = 'btn btn-sm btn-outline-danger rounded-pill';
         delBtn.innerHTML = '<i class="bi bi-trash"></i>';
         delBtn.title = 'Remove song';
         delBtn.addEventListener('click', () => deleteSongFromPlaylist(currentPlaylistId, v.id));

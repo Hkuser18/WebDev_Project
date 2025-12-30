@@ -16,39 +16,14 @@
       rel="stylesheet"
     />
     <link href="css/styles.css" rel="stylesheet" />
-    <style>
-      /* Specific styles for the search grid */
-      .video-card-img-top {
-        height: 180px;
-        object-fit: cover;
-        cursor: pointer;
-      }
-
-      /* Forces title to exactly 2 lines with ellipsis */
-      .card-title-clamp {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        height: 3rem;
-      }
-
-      .video-stats {
-        font-size: 0.85rem;
-        color: var(--muted);
-      }
-    </style>
+    
   </head>
 
   <body>
     <nav class="navbar navbar-expand-lg">
       <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="index.html">
-          <i
-            class="bi bi-bootstrap"
-            style="font-size: 1.4rem; color: var(--primary-2)"
-          ></i>
+          <i class="bi bi-bootstrap brand-icon"></i>
           <span class="ms-2">My Project</span>
         </a>
         <button
@@ -94,8 +69,7 @@
             id="userAvatar"
             src="alt"
             ="User"
-            class="rounded-circle me-3 border bg-white"
-            style="width: 64px; height: 64px; object-fit: cover"
+            class="rounded-circle me-3 border bg-white welcome-avatar"
           />
           <div>
             <h2 class="h4 mb-0">
@@ -243,7 +217,7 @@
       </div>
     </div>
 
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div class="position-fixed bottom-0 end-0 p-3 toast-host">
       <div
         id="playlistToast"
         class="toast align-items-center text-white bg-success border-0"

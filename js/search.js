@@ -105,8 +105,8 @@ function checkLoginAndSetup() {
     if (welcomeSection) {
         welcomeSection.classList.remove("d-none");
         welcomeUsername.textContent = user.username;
-        // Use user image or default file with timeout fallback
-        const avatarSrc = user.image || 'defAvatar.png';
+        // Use user.imageUrl or legacy user.image, fallback to default
+        const avatarSrc = user.imageUrl || user.image || 'defAvatar.png';
         loadImageWithTimeout(userAvatar, avatarSrc, 3000, 'defAvatar.png');
     }
 
@@ -248,13 +248,13 @@ function renderResults(videos) {
         col.dataset.videoId = videoId;
         col.innerHTML = `
         <div class="card h-100 shadow-sm video-card">
-            <div class="position-relative" style="cursor:pointer" onclick="openVideoPlayer('${videoId}')">
+            <div class="position-relative clickable">
                 <img src="${thumb}" class="card-img-top video-card-img-top" alt="${title}">
                 <div class="position-absolute bottom-0 end-0 bg-dark text-white px-2 py-1 m-1 rounded small opacity-75">
                     ${parseDuration(content.duration)}
                 </div>
                 <div class="position-absolute top-50 start-50 translate-middle text-white opacity-75">
-                    <i class="bi bi-play-circle-fill" style="font-size: 3rem;"></i>
+                    <i class="bi bi-play-circle-fill play-icon"></i>
                 </div>
             </div>
             <div class="card-body d-flex flex-column">
@@ -263,10 +263,10 @@ function renderResults(videos) {
                 <p class="video-stats mb-3">${formatViews(stats.viewCount)} views</p>
                 
                 <div class="mt-auto d-flex justify-content-between">
-                    <button class="btn btn-sm btn-primary" onclick="openVideoPlayer('${videoId}')">
+                    <button class="btn btn-sm btn-primary play-btn">
                         <i class="bi bi-play-fill"></i> Play
                     </button>
-                    <button class="btn btn-sm ${favBtnColor} fav-btn" data-video-id="${videoId}" onclick="openAddModal('${videoId}', '${title}', '${thumb}')">
+                    <button class="btn btn-sm ${favBtnColor} fav-btn" data-video-id="${videoId}">
                         <i class="bi ${favIcon}"></i> ${favText}
                     </button>
                 </div>
@@ -274,6 +274,20 @@ function renderResults(videos) {
         </div>
     `;
         container.appendChild(col);
+
+        // Attach event listeners safely (avoid inline onclick with quoted args)
+        try {
+            const clickable = col.querySelector('.clickable');
+            if (clickable) clickable.addEventListener('click', () => openVideoPlayer(videoId));
+
+            const playBtn = col.querySelector('.play-btn');
+            if (playBtn) playBtn.addEventListener('click', (ev) => { ev.stopPropagation(); openVideoPlayer(videoId); });
+
+            const favBtnEl = col.querySelector('.fav-btn');
+            if (favBtnEl) favBtnEl.addEventListener('click', (ev) => { ev.stopPropagation(); openAddModal(videoId, snippet.title, thumb); });
+        } catch (e) {
+            console.warn('attach listeners error', e);
+        }
     });
 }
 

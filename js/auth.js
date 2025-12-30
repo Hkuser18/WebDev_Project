@@ -11,6 +11,8 @@ function renderUserInHeader() {
             <a href="login.html" class="btn btn-outline-secondary me-2 rounded-pill">Sign in</a>
             <a href="register.html" class="btn btn-primary rounded-pill">Register</a>
         `;
+        // Ensure left-side nav links (if present) are visible when signed-out
+        toggleLeftAuthLinks(false);
         return;
     }
 
@@ -21,10 +23,10 @@ function renderUserInHeader() {
     const avatarSrc = user.imageUrl || 'defAvatar.png';
     navActions.innerHTML = `
         <div class="d-flex align-items-center">
-            <img id="hdrAvatar" src="${avatarSrc}" alt="avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:8px;" />
-            <span class="me-3">${escapeHtml(user.username)}</span>
-            <button id="logoutBtn" class="btn btn-outline-secondary btn-sm rounded-pill">Logout</button>
-        </div>
+                <img id="hdrAvatar" src="${avatarSrc}" alt="avatar" class="hdr-avatar" />
+                <span class="me-3">${escapeHtml(user.username)}</span>
+                <button id="logoutBtn" class="btn btn-outline-secondary btn-sm rounded-pill">Logout</button>
+            </div>
     `;
 
     // Load avatar with timeout and fallback
@@ -36,6 +38,27 @@ function renderUserInHeader() {
         sessionStorage.removeItem('currentUser');
         window.location.href = 'index.html';
     });
+    // Hide left-side nav "Login/Register" when signed-in
+    toggleLeftAuthLinks(true);
+}
+
+// Show or hide left-side nav links that point to login/register
+function toggleLeftAuthLinks(hideAuthLinks) {
+    try {
+        // find nav links in the left nav (commonly .nav-link) that point to login/register
+        const loginLinks = document.querySelectorAll('.navbar .nav-link[href*="login.html"]');
+        const registerLinks = document.querySelectorAll('.navbar .nav-link[href*="register.html"]');
+        const all = [...loginLinks, ...registerLinks];
+        all.forEach(a => {
+            if (hideAuthLinks) {
+                a.classList.add('d-none');
+            } else {
+                a.classList.remove('d-none');
+            }
+        });
+    } catch (e) {
+        // ignore
+    }
 }
 
 // Image loader with timeout and fallback
@@ -69,4 +92,10 @@ function escapeHtml(text) {
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
-document.addEventListener('DOMContentLoaded', () => renderUserInHeader());
+// Ensure header renders whether the script is loaded before or after DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderUserInHeader);
+} else {
+    // DOM already ready
+    renderUserInHeader();
+}
