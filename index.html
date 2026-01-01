@@ -1,85 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
     <meta name="description" content="" />
     <meta name="author" content="" />
     <title>Landing — My Project</title>
     <!-- Bootstrap (Cosmo theme) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/cosmo/bootstrap.min.css" rel="stylesheet" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/cosmo/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <!-- Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
     <!-- Custom styles -->
     <link href="css/styles.css" rel="stylesheet" />
-</head>
+  </head>
 
-<body>
-
+  <body>
     <!-- Header: left-aligned links with icon, right-side buttons -->
     <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="index.html">
-                <i class="bi bi-bootstrap brand-icon"></i>
-                <span class="ms-2">My Project</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="index.html">
+          <i class="bi bi-bootstrap brand-icon"></i>
+          <span class="ms-2">My Project</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="playlists.html">Playlists</a></li>
-                    <li class="nav-item"><a class="nav-link" href="search.html">Search</a></li>
-                    <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="register.html">Register</a></li>
-                </ul>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="index.html">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="playlists.html">Playlists</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="search.html">Search</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="login.html">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="register.html">Register</a>
+            </li>
+          </ul>
 
-                <div id="navActions" class="d-flex">
-                    <a href="login.html" class="btn btn-outline-secondary me-2">Sign in</a>
-                    <a href="register.html" class="btn btn-primary">Register</a>
-                </div>
-            </div>
+          <div id="navActions" class="d-flex">
+            <a href="login.html" class="btn btn-outline-secondary me-2"
+              >Sign in</a
+            >
+            <a href="register.html" class="btn btn-primary">Register</a>
+          </div>
         </div>
+      </div>
     </nav>
 
     <!-- Body: light gray background, centered card (white) -->
     <main class="bg-light py-5 main-content">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-12">
-                    <div class="card hero-card mb-4">
-                        <div class="card-body" id="hero_div">
-                            <!-- Config data will be injected here by js/index.js -->
-                            <div class="text-center text-muted">Loading author info...</div>
-                        </div>
-                    </div>
-                </div>
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-md-12">
+            <div class="card hero-card mb-4">
+              <div class="card-body" id="hero_div">
+                <!-- Config data will be injected here by js/index.js -->
+                <div class="text-center text-muted">Loading author info...</div>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
     </main>
 
     <!-- Footer: non-sticky full-width light-blue bar -->
     <footer class="site-footer">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div>
-                <small class="text-muted">© Perfect Score Websites inc. 2025</small>
-            </div>
-            <div>
-                <small class="text-muted">Built with Bootstrap</small>
-            </div>
+      <div class="container d-flex justify-content-between align-items-center">
+        <div>
+          <small class="text-muted">© Perfect Score Websites inc. 2025</small>
         </div>
+        <div>
+          <small class="text-muted">Built with Bootstrap</small>
+        </div>
+      </div>
     </footer>
 
     <!-- Bootstrap JS bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- App JS -->
-    <script src="js/index.js"></script>
     <script src="js/auth.js"></script>
-
-</body>
-
+    <script src="js/index.js"></script>
+  </body>
 </html>
