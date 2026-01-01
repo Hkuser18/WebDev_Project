@@ -39,41 +39,6 @@ async function fetchWithTimeout(resource, options = {}) {
     }
 }
 
-// Small GUID generator for playlist IDs
-function guid() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
-// Image loader with timeout and fallback (for avatars)
-function loadImageWithTimeout(imgEl, src, timeoutMs = 3000, fallback = 'defAvatar.png') {
-    if (!imgEl) return;
-    let settled = false;
-    const img = new Image();
-    const t = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        imgEl.src = fallback;
-    }, timeoutMs);
-
-    img.onload = () => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(t);
-        imgEl.src = src;
-    };
-    img.onerror = () => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(t);
-        imgEl.src = fallback;
-    };
-    img.src = src;
-}
-
-
 
 // ==========================================
 // MAIN LOGIC
@@ -207,7 +172,11 @@ async function executeSearch(query) {
         // Save State
         sessionStorage.setItem("lastSearchState", JSON.stringify({ query: query, results: items }));
 
-        renderResults(items);
+        const playlistRes = await fetch('/api/playlists', { credentials: 'same-origin' });
+        const playlistData = await playlistRes.json().catch(() => ({}));
+        const userPlaylists = playlistData.playlists || [];
+
+        renderResults(items,userPlaylists);
 
     } catch (error) {
         console.error(error);
@@ -218,7 +187,7 @@ async function executeSearch(query) {
 }
 
 // 4. Render Results
-function renderResults(videos) {
+function renderResults(videos,userPlaylists=[]) {
     const container = document.getElementById("resultsContainer");
 
     // Always clear existing results to avoid duplicates when re-rendering
@@ -226,9 +195,6 @@ function renderResults(videos) {
 
     // Get current user playlists to check favorites status
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
-    const allUsers = JSON.parse(localStorage.getItem("users")) || [];
-    const userRecord = allUsers.find(u => u.username === currentUser.username);
-    const userPlaylists = userRecord ? (userRecord.playlists || []) : [];
 
     if (!videos || videos.length === 0) {
         container.innerHTML = `<div class="col-12 text-center text-muted">No results found.</div>`;
@@ -460,7 +426,3 @@ function parseDuration(iso) {
     return res;
 }
 
-function escapeHtml(text) {
-    if (!text) return "";
-    return text.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-}

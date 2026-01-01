@@ -70,25 +70,8 @@ function initPlaylistsPage() {
     loadAndRenderPlaylists();
 }
 
-function getStorageUserRecord() {
-    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const allUsers = JSON.parse(localStorage.getItem('users')) || [];
-    const userIndex = allUsers.findIndex(u => u.username === currentUser.username);
-    const userRecord = userIndex !== -1 ? allUsers[userIndex] : null;
-    return { allUsers, userRecord, userIndex };
-}
 
-function saveAllUsers(allUsers) {
-    localStorage.setItem('users', JSON.stringify(allUsers));
-}
-
-function guid() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
+// Load playlists from server and render sidebar
 async function loadAndRenderPlaylists() {
     const sidebar = document.getElementById('sidebarPlaylistList');
     sidebar.innerHTML = '<div class="text-center text-muted small mt-2">Loading...</div>';
@@ -145,6 +128,7 @@ async function loadAndRenderPlaylists() {
     selectPlaylist(findId, false);
 }
 
+// Select a playlist by id
 function selectPlaylist(id, pushState = true) {
     const pl = serverPlaylists.find(p => p.id === id);
     if (!pl) return;
@@ -164,6 +148,7 @@ function selectPlaylist(id, pushState = true) {
     renderCurrentPlaylist();
 }
 
+// Render the currently selected playlist
 function renderCurrentPlaylist() {
     const header = document.getElementById('playlistHeader');
     const emptyState = document.getElementById('emptyState');
@@ -206,6 +191,7 @@ function renderCurrentPlaylist() {
         return;
     }
 
+    // Build song items
     videos.forEach(v => {
         const item = document.createElement('div');
         item.className = 'list-group-item d-flex gap-3 align-items-center';
@@ -264,11 +250,13 @@ function renderCurrentPlaylist() {
     });
 }
 
+// Show empty state UI
 function showEmptyState() {
     document.getElementById('playlistHeader').classList.add('d-none');
     document.getElementById('emptyState').classList.remove('d-none');
 }
 
+// Create a new playlist
 function createNewPlaylist() {
     const nameInput = document.getElementById('newPlaylistNameInput');
     const name = (nameInput?.value || '').trim();
@@ -288,6 +276,7 @@ function createNewPlaylist() {
         }).catch(e => alert('Could not create playlist'));
 }
 
+// Play the selected playlist
 function playPlaylist(id) {
     const pl = serverPlaylists.find(p => p.id === id);
     if (!pl || !pl.videos || pl.videos.length === 0) {
@@ -297,6 +286,7 @@ function playPlaylist(id) {
     openVideoPlayer(pl.videos[0].id);
 }
 
+// Delete a song from the playlist
 function deleteSongFromPlaylist(playlistId, videoId) {
     if (!confirm('Remove this song from the playlist?')) return;
     fetch(`/api/playlists/${encodeURIComponent(playlistId)}/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoId }) })
@@ -307,6 +297,7 @@ function deleteSongFromPlaylist(playlistId, videoId) {
         }).catch(e => alert('Could not remove song'));
 }
 
+// Delete the current playlist
 function confirmDeletePlaylist() {
     if (!currentPlaylistId) return;
     if (!confirm('Delete this playlist and all its songs?')) return;
@@ -318,16 +309,18 @@ function confirmDeletePlaylist() {
         }).catch(e => alert('Could not delete playlist'));
 }
 
+// Rate a song in the playlist
 function rateSong(playlistId, videoId, rating) {
     // Local UI change; persistence of ratings is not implemented server-side yet
-    const pl = serverPlaylists.find(p => p.id === playlistId);
-    if (!pl) return;
-    const v = pl.videos.find(x => x.id === videoId);
-    if (!v) return;
-    v.rating = rating;
-    renderCurrentPlaylist();
+    fetch(`/api/playlists/${encodeURIComponent(playlistId)}/rate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoId, rating }) })
+        .then(async (res) => {
+            if (!res.ok) throw new Error('Failed');
+            await loadAndRenderPlaylists();
+            if (currentPlaylistId === playlistId) renderCurrentPlaylist();
+        }).catch(e => alert('Could not rate song'));
 }
 
+// Set sorting method and re-render
 function setSort(kind) {
     currentSort = kind;
     renderCurrentPlaylist();
@@ -361,7 +354,4 @@ function openVideoPlayer(videoId) {
     modalEl.addEventListener('hidden.bs.modal', () => { iframe.src = ''; });
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-}
+

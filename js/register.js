@@ -1,23 +1,6 @@
-function getUsers() {
-    try {
-        const raw = localStorage.getItem('users');
-        return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-        return [];
-    }
-}
+// js/register.js — handle user registration via server API
 
-function saveUser(user) {
-    const users = getUsers();
-    users.push(user);
-    localStorage.setItem('users', JSON.stringify(users));
-}
-
-function usernameExists(username) {
-    const users = getUsers();
-    return users.some(u => u.username && u.username.toLowerCase() === username.toLowerCase());
-}
-
+//validate password legality
 function validatePassword(pw) {
     if (!pw || pw.length < 6) return false;
     const hasLetter = /[A-Za-z]/.test(pw);
@@ -26,6 +9,7 @@ function validatePassword(pw) {
     return hasLetter && hasNumber && hasSymbol;
 }
 
+//event listener for form submission
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('registerForm');
     const errorsDiv = document.getElementById('registerErrors');
@@ -50,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!password) errors.push('Password is required.');
         if (!confirmPassword) errors.push('Confirm password is required.');
 
-        if (username && usernameExists(username)) errors.push('Username already exists. Choose another.');
 
         if (password && !validatePassword(password)) errors.push('Password must be at least 6 characters and include a letter, a number and a symbol.');
 

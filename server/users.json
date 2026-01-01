@@ -28,5 +28,27 @@
         ]
       }
     ]
+  },
+  {
+    "id": "d3bc470c-e352-4c5c-bca1-583d8ab52c37",
+    "username": "coolio",
+    "firstName": "cool",
+    "imageUrl": "https://img.icons8.com/?size=100&id=tZuAOUGm9AuS&format=png&color=000000",
+    "passwordHash": "$2b$10$F7AE.DNgOIa9a2eNd0w2gOsaE5obHD1I/rgjVT4lQgDYo0mOtXTLq",
+    "playlists": [
+      {
+        "id": "d6fde8c7-fcca-4f7a-817f-ba36671088eb",
+        "name": "dire",
+        "videos": [
+          {
+            "id": "kd9TlGDZGkI",
+            "title": "Dire Straits - Walk Of Life (Official Music Video)",
+            "img": "https://i.ytimg.com/vi/kd9TlGDZGkI/mqdefault.jpg",
+            "type": "youtube",
+            "dateAdded": "2026-01-01T15:05:30.150Z"
+          }
+        ]
+      }
+    ]
   }
 ]

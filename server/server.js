@@ -47,7 +47,7 @@ function safeUser(user) {
     id: user.id,
     username: user.username,
     firstName: user.firstName,
-    imageUrl: user.imageUrl || user.image || null
+    imageUrl: user.imageUrl || null
   };
 }
 
@@ -90,10 +90,12 @@ app.post('/api/logout', (req, res) => {
 // Get current user - GET to /api/current
 app.get('/api/current', (req, res) => {
   const userId = req.session.userId;
-  if (!userId) return res.json({ user: null });
+  if (!userId) 
+    return res.json({ user: null });
   const users = readUsers();
   const user = users.find(u => u.id === userId);
-  if (!user) return res.json({ user: null });
+  if (!user) 
+    return res.json({ user: null });
   return res.json({ user: safeUser(user) });
 });
 
@@ -167,6 +169,26 @@ app.post('/api/playlists/:id/delete', requireAuth, (req, res) => {
   const idx = users.findIndex(u => u.id === req.session.userId);
   if (idx === -1) return res.status(404).json({ error: 'User not found' });
   users[idx].playlists = (users[idx].playlists || []).filter(p => p.id !== plId);
+  writeUsers(users);
+  return res.json({ ok: true });
+});
+
+// rate a song in playlist, POST to /api/playlists/:id/rate
+app.post('/api/playlists/:id/rate', requireAuth, (req, res) => {
+  const plId = req.params.id;
+  const { videoId } = req.body;
+  if (!videoId) return res.status(400).json({ error: 'videoId required' });
+  const users = readUsers();
+  const idx = users.findIndex(u => u.id === req.session.userId);
+  if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  const pl = users[idx].playlists.find(p => p.id === plId);
+  if (!pl) return res.status(404).json({ error: 'Playlist not found' });
+  for (let v of pl.videos) {
+    if (v.id === videoId) {
+      v.rating = req.body.rating;
+      break;
+    }
+  }
   writeUsers(users);
   return res.json({ ok: true });
 });
