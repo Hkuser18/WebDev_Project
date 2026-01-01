@@ -4,11 +4,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let config = [];
 
+// Normalize config into an array
+function normalizeConfig(cfg) {
+    if (!cfg) return [];
+    if (typeof cfg === 'string') {
+        try { cfg = JSON.parse(cfg); } catch { return []; }
+    }
+    return Array.isArray(cfg) ? cfg : [cfg];
+}
+
 async function loadConfig() {
     try {
+        //attempt to load from injected global first
         if (typeof INJECTED_CONFIG !== 'undefined' && INJECTED_CONFIG) {
-            config = INJECTED_CONFIG;
-            config = JSON.parse(config);
+            config = normalizeConfig(INJECTED_CONFIG.json ?? INJECTED_CONFIG);
             pageLoaded();
             return;
         }
