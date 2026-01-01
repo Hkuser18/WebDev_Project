@@ -4,6 +4,7 @@ function renderUserInHeader() {
     const navActions = document.getElementById('navActions');
     if (!navActions) return;
 
+    // Check sessionStorage for current user
     const raw = sessionStorage.getItem('currentUser');
     if (!raw) {
         // Signed-out state: show Sign in / Register buttons
@@ -17,9 +18,10 @@ function renderUserInHeader() {
     }
 
     let user;
+    // try to parse user info
     try { user = JSON.parse(raw); } catch (e) { return; }
 
-    // Signed-in state: show avatar, username and logout
+    // Signed-in state: show avatar, username and logout button
     const avatarSrc = user.imageUrl || 'defAvatar.png';
     navActions.innerHTML = `
         <div class="d-flex align-items-center">
@@ -33,6 +35,7 @@ function renderUserInHeader() {
     const avatarEl = document.getElementById('hdrAvatar');
     if (avatarEl) loadImageWithTimeout(avatarEl, avatarSrc, 3000, 'defAvatar.png');
 
+    // Attach logout handler
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) logoutBtn.addEventListener('click', async () => {
         try {

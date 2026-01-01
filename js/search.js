@@ -234,7 +234,7 @@ function renderResults(videos) {
         container.innerHTML = `<div class="col-12 text-center text-muted">No results found.</div>`;
         return;
     }
-
+    // Render each video card
     videos.forEach(video => {
         const snippet = video.snippet;
         const stats = video.statistics || { viewCount: 0 };

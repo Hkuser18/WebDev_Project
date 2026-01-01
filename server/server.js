@@ -1,3 +1,4 @@
+//server dependencies and setup
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -35,10 +36,12 @@ function readUsers() {
   }
 }
 
+//write users to file
 function writeUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
 }
 
+//function to return user info without sensitive data
 function safeUser(user) {
   return {
     id: user.id,
@@ -48,7 +51,9 @@ function safeUser(user) {
   };
 }
 
-// Auth API
+//--Auth API--
+
+// Register - POST new user to /api/register
 app.post('/api/register', (req, res) => {
   const { username, firstName, imageUrl, password } = req.body;
   if (!username || !password || !firstName) {
@@ -65,6 +70,7 @@ app.post('/api/register', (req, res) => {
   return res.json({ ok: true });
 });
 
+// Login - POST to /api/login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Missing' });
@@ -76,10 +82,12 @@ app.post('/api/login', (req, res) => {
   return res.json({ user: safeUser(user) });
 });
 
+// Logout - POST to /api/logout
 app.post('/api/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
+// Get current user - GET to /api/current
 app.get('/api/current', (req, res) => {
   const userId = req.session.userId;
   if (!userId) return res.json({ user: null });
@@ -89,12 +97,15 @@ app.get('/api/current', (req, res) => {
   return res.json({ user: safeUser(user) });
 });
 
-// Playlists APIs
+//--Playlists APIs--
+
+//middleman to check auth
 function requireAuth(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
   next();
 }
 
+// Get all playlists for current user, GET to /api/playlists
 app.get('/api/playlists', requireAuth, (req, res) => {
   const users = readUsers();
   const user = users.find(u => u.id === req.session.userId);
@@ -102,6 +113,7 @@ app.get('/api/playlists', requireAuth, (req, res) => {
   return res.json({ playlists: user.playlists || [] });
 });
 
+// Create a new playlist, POST to /api/playlists
 app.post('/api/playlists', requireAuth, (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
@@ -115,6 +127,7 @@ app.post('/api/playlists', requireAuth, (req, res) => {
   return res.json({ playlist: pl });
 });
 
+// Add video to playlist, POST to /api/playlists/:id/add
 app.post('/api/playlists/:id/add', requireAuth, (req, res) => {
   const plId = req.params.id;
   const { video } = req.body; // video: { id, title, img, type }
@@ -132,6 +145,7 @@ app.post('/api/playlists/:id/add', requireAuth, (req, res) => {
   return res.json({ ok: true });
 });
 
+// Remove video from playlist, POST to /api/playlists/:id/remove
 app.post('/api/playlists/:id/remove', requireAuth, (req, res) => {
   const plId = req.params.id;
   const { videoId } = req.body;
@@ -146,7 +160,7 @@ app.post('/api/playlists/:id/remove', requireAuth, (req, res) => {
   return res.json({ ok: true });
 });
 
-// Delete a playlist
+// Delete a playlist, POST to /api/playlists/:id/delete
 app.post('/api/playlists/:id/delete', requireAuth, (req, res) => {
   const plId = req.params.id;
   const users = readUsers();
@@ -157,7 +171,7 @@ app.post('/api/playlists/:id/delete', requireAuth, (req, res) => {
   return res.json({ ok: true });
 });
 
-// Upload MP3s
+// Upload MP3s, POST to /api/upload
 const upload = multer({ dest: path.join(__dirname, 'uploads/') });
 app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file' });
@@ -166,4 +180,5 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   return res.json({ url });
 });
 
+//start server
 app.listen(PORT, () => console.log('Server listening on port', PORT));
