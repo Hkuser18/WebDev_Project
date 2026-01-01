@@ -40,7 +40,11 @@ jobs:
       - name: Inject User_Config into config.js
         run: |
           mkdir -p js
-          echo "const INJECTED_CONFIG = '${{ secrets.USER_CONFIG }}';" > js/config.js    
+          cat > js/config.js <<'EOF'
+          const INJECTED_CONFIG = {
+          json: JSON.parse(`${{ secrets.USER_CONFIG }}`)
+          };
+          EOF
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
