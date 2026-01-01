@@ -8,6 +8,7 @@ async function loadConfig() {
     try {
         if (typeof INJECTED_CONFIG !== 'undefined' && INJECTED_CONFIG) {
             config = INJECTED_CONFIG;
+            config = JSON.parse(config);
             pageLoaded();
             return;
         }
