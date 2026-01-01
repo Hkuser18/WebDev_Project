@@ -7,7 +7,7 @@ let config = [];
 async function loadConfig() {
     try {
         if (typeof INJECTED_CONFIG !== 'undefined' && INJECTED_CONFIG) {
-            config = INJECTED_CONFIG.json;
+            config = INJECTED_CONFIG;
             pageLoaded();
             return;
         }
