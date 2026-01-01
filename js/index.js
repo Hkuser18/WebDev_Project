@@ -6,6 +6,11 @@ let config = [];
 
 async function loadConfig() {
     try {
+        if (typeof INJECTED_CONFIG !== 'undefined' && INJECTED_CONFIG) {
+            config = INJECTED_CONFIG.json;
+            pageLoaded();
+            return;
+        }
         // Use a timed fetch so config load won't hang
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), 5000);
