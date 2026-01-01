@@ -2,24 +2,28 @@
 // CONFIGURATION
 // ==========================================
 
-// API key will be loaded from `key.txt` at project root.
-// Place your API key (plain text) in `key.txt` and the script will fetch it.
+//API key is stored as an env secret and injected at build time
 let API_KEY = "";
 
 async function loadApiKey() {
+    // Check if API key was injected at build time
+    if (typeof INJECTED_API_KEY !== 'undefined' && INJECTED_API_KEY) {
+        API_KEY = INJECTED_API_KEY;
+        return;
+    }
+    
+    // Fallback to key.txt for local development
     try {
         let res = null;
         try {
             res = await fetchWithTimeout('../key.txt', { timeout: 3000 });
         } catch (e) {
-            // fallback to root
             res = await fetchWithTimeout('key.txt', { timeout: 3000 }).catch(() => null);
         }
         if (res && res.ok) {
             API_KEY = (await res.text()).trim();
         }
     } catch (e) {
-        // network or file not found; leave API_KEY empty
         console.warn('Could not load API key from key.txt', e);
     }
 }
@@ -47,31 +51,7 @@ function guid() {
     });
 }
 
-// Image loader with timeout and fallback (for avatars)
-function loadImageWithTimeout(imgEl, src, timeoutMs = 3000, fallback = 'defAvatar.png') {
-    if (!imgEl) return;
-    let settled = false;
-    const img = new Image();
-    const t = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        imgEl.src = fallback;
-    }, timeoutMs);
 
-    img.onload = () => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(t);
-        imgEl.src = src;
-    };
-    img.onerror = () => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(t);
-        imgEl.src = fallback;
-    };
-    img.src = src;
-}
 
 
 
@@ -324,18 +304,7 @@ function refreshVideoCard(videoId) {
 // 5. Modal Logic
 
 // A. Video Player
-window.openVideoPlayer = function (videoId) {
-    const modalEl = document.getElementById('videoModal');
-    const iframe = document.getElementById('videoPlayerFrame');
-    const modal = new bootstrap.Modal(modalEl);
 
-    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    modal.show();
-
-    modalEl.addEventListener('hidden.bs.modal', () => {
-        iframe.src = ""; // Stop audio when closed
-    });
-};
 
 // B. Add to Playlist Modal
 window.openAddModal = function (id, title, img) {
@@ -452,7 +421,3 @@ function parseDuration(iso) {
     return res;
 }
 
-function escapeHtml(text) {
-    if (!text) return "";
-    return text.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-}

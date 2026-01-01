@@ -1,4 +1,4 @@
-// auth.js — manage header user display and logout
+// auth.js — manage header user display and logout, general js utilities
 // Render the header actions depending on session state
 function renderUserInHeader() {
     const navActions = document.getElementById('navActions');
@@ -98,4 +98,13 @@ if (document.readyState === 'loading') {
 } else {
     // DOM already ready
     renderUserInHeader();
+}
+
+// Registration form handling - utility function
+function guid() {
+    // Simple GUID generator
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }
