@@ -33,14 +33,15 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Inject API key into config.js
-        run: |
-          mkdir -p js
-          echo "const INJECTED_API_KEY = '${{ secrets.YOUTUBE_API_KEY }}';" > js/config.js
-      - name: Inject User_Config into config.js
+      - name: Inject API key
         run: |
           mkdir -p js
           cat > js/config.js <<'EOF'
+          const INJECTED_API_KEY = '${{ secrets.YOUTUBE_API_KEY }}';
+          EOF
+      - name: Inject User_Config
+        run: |
+          cat >> js/config.js <<'EOF'
           const INJECTED_CONFIG = {
           json: JSON.parse(`${{ secrets.USER_CONFIG }}`)
           };
